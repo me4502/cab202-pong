@@ -1,3 +1,6 @@
+#include <stdlib.h>
+#include <math.h>
+#include <time.h>
 #include "cab202_graphics.h"
 #include "cab202_timers.h"
 #include "cab202_sprites.h"
@@ -7,6 +10,8 @@
 int main() {
     setup_screen();
 
+    setup();
+
     while (running) {
         clear_screen();
         process();
@@ -14,14 +19,31 @@ int main() {
         timer_pause(DELAY);
     }
 
+    cleanup();
+
     cleanup_screen();
     return 0;
 }
 
+void setup() {
+    srand((unsigned int) time(NULL));
+
+    paddle_size = MIN(7, (screen_height() - 2 - 1) / 2);
+    left_paddle_offset = screen_height()/2 - paddle_size/2;
+    right_paddle_offset = screen_height()/2 - paddle_size/2;
+}
+
+void cleanup() {
+    if (cooldown_timer) {
+        destroy_timer(*cooldown_timer);
+    }
+    if (ball_sprite) {
+        sprite_destroy(*ball_sprite);
+    }
+}
+
 void process() {
     int pressed_char = get_char();
-
-    game_time ++;
 
     // Draw help screen
     if (display_help_screen) {
@@ -39,7 +61,9 @@ void process() {
         return;
     }
 
-    // Draw the main game screen
+    if (ball_sprite) {
+        sprite_draw(*ball_sprite);
+    }
 
     // Draw the border
     draw_line(0, 0, screen_width()-1, 0, '*');
@@ -62,6 +86,135 @@ void process() {
 
     draw_formatted(2 + third*3, 1, "* Time: %02d:%02d", minutes, seconds);
 
+    // Draw left paddle.
+    for (int i = 0; i < paddle_size; i++) {
+        draw_char(3, left_paddle_offset + i, '|');
+    }
+
+    // Draw right paddle.
+    if (level != 0) {
+        for (int i = 0; i < paddle_size; i++) {
+            draw_char(screen_width() - 4, right_paddle_offset + i, '|');
+        }
+    }
+
+    // Draw the main game screen
+    switch (level) {
+        case 0:
+            break;
+        case 1:
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+        default:
+            start_level(0);
+            break;
+    }
+
+    if (cooldown_timer) {
+        char *text = "Starting in... %d";
+        int x = screen_width()/2 - string_length(text) / 2;
+
+        draw_formatted(x, screen_height()/2, text, cooldown_number);
+
+        if (timer_expired(*cooldown_timer)) {
+            cooldown_number --;
+            if (cooldown_number < 0) {
+                destroy_timer(*cooldown_timer);
+                cooldown_timer = NULL;
+                if (!ball_sprite) {
+                    ball_sprite = malloc(sizeof(sprite_id));
+                    *ball_sprite = sprite_create(screen_width()/2, screen_height()/2, 1, 1, "*");
+                } else {
+                    sprite_move_to(*ball_sprite, screen_width()/2, screen_height()/2);
+                }
+
+                double degrees = ((rand() % 91) - 90 - 45);
+                double radians = (degrees * PI / 180.0);
+
+                double dx = sin(radians) * ball_starting_velocity;
+                double dy = cos(radians) * ball_starting_velocity;
+
+                sprite_turn_to(*ball_sprite, dx, dy);
+            } else {
+                timer_reset(*cooldown_timer);
+            }
+        }
+        return;
+    }
+
+    int sx = ball_sprite ? (int) round(sprite_x(*ball_sprite)) : 0;
+    int sy = ball_sprite ? (int) round(sprite_y(*ball_sprite)) : 0;
+
+    if (!ball_sprite || sx < 0
+        || sx > screen_width()) {
+        if (ball_sprite && sy < screen_width() / 2) {
+            lives -= 1;
+            // TODO Out of lives
+        }
+        spawn_ball();
+        return;
+    }
+
+    game_time ++;
+
+    // Bounce when the ball hits the top or bottom.
+    if (sy < 3 || sy > screen_height()-2) {
+        double dx = sprite_dx(*ball_sprite);
+        double dy = -sprite_dy(*ball_sprite);
+
+        sprite_back(*ball_sprite);
+        sprite_turn_to(*ball_sprite, dx, dy);
+    }
+
+    // Bounce when the ball hits the left paddle
+    if (sx == 3 && sy >= left_paddle_offset && sy < left_paddle_offset + paddle_size) {
+        double dx = -sprite_dx(*ball_sprite);
+        double dy = sprite_dy(*ball_sprite);
+
+        sprite_back(*ball_sprite);
+        sprite_turn_to(*ball_sprite, dx, dy);
+
+        score ++;
+    }
+
+    if (level != 0) {
+        // Bounce when the ball hits the right paddle
+        if (sx == screen_width() - 4 && sy >= right_paddle_offset && sy < right_paddle_offset + paddle_size) {
+            double dx = -sprite_dx(*ball_sprite);
+            double dy = sprite_dy(*ball_sprite);
+
+            sprite_back(*ball_sprite);
+            sprite_turn_to(*ball_sprite, dx, dy);
+        }
+    }
+
+    // Update the main game screen
+    switch (level) {
+        case 0:
+            if (sx >= screen_width() - 2) {
+                double dx = -sprite_dx(*ball_sprite);
+                double dy = sprite_dy(*ball_sprite);
+
+                sprite_back(*ball_sprite);
+                sprite_turn_to(*ball_sprite, dx, dy);
+            }
+            break;
+        case 1:
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+        default:
+            start_level(0);
+            break;
+    }
+
+    sprite_step(*ball_sprite);
+
     if (pressed_char == 'l') {
         int new_level = level + 1;
         if (new_level >= LEVEL_COUNT) {
@@ -71,15 +224,39 @@ void process() {
         start_level(new_level);
     } else if (pressed_char == 'h') {
         display_help_screen = true;
+    } else if (pressed_char == 'w') {
+        left_paddle_offset --;
+        if (left_paddle_offset < 3)
+            left_paddle_offset = 3;
+    } else if (pressed_char == 's') {
+        left_paddle_offset ++;
+        if (left_paddle_offset > screen_height() - paddle_size - 1)
+            left_paddle_offset = screen_height() - paddle_size - 1;
     }
+}
+
+void spawn_ball() {
+    cooldown_timer = malloc(sizeof(timer_id));
+    *cooldown_timer = create_timer(300);
+    cooldown_number = 3;
 }
 
 void start_level(int new_level) {
     level = new_level;
 
-    score = 0;
-    lives = 10;
-    game_time = 0;
+    switch (new_level) {
+        case 0:
+            break;
+        case 1:
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+        default:
+            start_level(0);
+            break;
+    }
 }
 
 int string_length(char * str) {
