@@ -12,6 +12,7 @@
 
 bool running = true;
 bool display_help_screen = true;
+bool gameover = false;
 
 // Level management variables.
 int level = 0;
@@ -24,7 +25,11 @@ timer_id *cooldown_timer;
 int cooldown_number;
 
 sprite_id *ball_sprite;
-double ball_starting_velocity = 0.3;
+double ball_starting_velocity = 0.2;
+
+// Level 4 variables
+
+// Level
 
 // Paddle variables
 int left_paddle_offset;
@@ -38,6 +43,7 @@ const char * help_screen_text[] = {
         "",
         "Controls",
         "L for next level - H for help",
+        "S for down - W for up"
         "",
         "Press any key to exit"
 
@@ -52,5 +58,7 @@ void process();
 void spawn_ball();
 
 void start_level(int new_level);
+
+void game_over();
 
 int string_length(char * str);
