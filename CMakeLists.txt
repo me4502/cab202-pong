@@ -13,6 +13,6 @@ find_package(Curses REQUIRED)
 
 include_directories(${CURSES_INCLUDE_DIR})
 
-add_executable(Assignment_1 ${SOURCE_FILES})
+add_executable(Assignment_1 pong.c)
 
 target_link_libraries(Assignment_1 zdk ${CURSES_LIBRARIES})
