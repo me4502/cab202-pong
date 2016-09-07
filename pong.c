@@ -152,7 +152,9 @@ void process() {
         || sx > screen_width()) {
         if (ball_sprite && sy < screen_width() / 2) {
             lives -= 1;
-            // TODO Out of lives
+            if (lives < 0) {
+                game_over();
+            }
         }
         spawn_ball();
         return;
@@ -171,8 +173,14 @@ void process() {
 
     // Bounce when the ball hits the left paddle
     if (sx == 3 && sy >= left_paddle_offset && sy < left_paddle_offset + paddle_size) {
-        double dx = -sprite_dx(*ball_sprite);
         double dy = sprite_dy(*ball_sprite);
+        double dx = sprite_dx(*ball_sprite);
+
+        if ((sy == left_paddle_offset && dy > 0) || (sy == left_paddle_offset + paddle_size - 1 && dy < 0)) {
+            dy = -dy;
+        } else {
+            dx = -dx;
+        }
 
         sprite_back(*ball_sprite);
         sprite_turn_to(*ball_sprite, dx, dy);
@@ -183,11 +191,24 @@ void process() {
     if (level != 0) {
         // Bounce when the ball hits the right paddle
         if (sx == screen_width() - 4 && sy >= right_paddle_offset && sy < right_paddle_offset + paddle_size) {
-            double dx = -sprite_dx(*ball_sprite);
             double dy = sprite_dy(*ball_sprite);
+            double dx = sprite_dx(*ball_sprite);
+
+            if ((sy == right_paddle_offset && dy > 0) || (sy == right_paddle_offset + paddle_size - 1 && dy < 0)) {
+                dy = -dy;
+            } else {
+                dx = -dx;
+            }
 
             sprite_back(*ball_sprite);
             sprite_turn_to(*ball_sprite, dx, dy);
+        }
+
+        right_paddle_offset = sy - paddle_size/2;
+        if (right_paddle_offset < 3) {
+            right_paddle_offset = 3;
+        } else if (right_paddle_offset > screen_height() - paddle_size - 1) {
+            right_paddle_offset = screen_height() - paddle_size - 1;
         }
     }
 
@@ -244,6 +265,8 @@ void spawn_ball() {
 void start_level(int new_level) {
     level = new_level;
 
+    spawn_ball();
+
     switch (new_level) {
         case 0:
             break;
@@ -257,6 +280,10 @@ void start_level(int new_level) {
             start_level(0);
             break;
     }
+}
+
+void game_over() {
+    gameover = true;
 }
 
 int string_length(char * str) {
