@@ -35,14 +35,14 @@ char * anomoly_image =
         " /|\\ "
         "/ | \\";
 sprite_id * anomoly;
+timer_id *anomoly_timer;
+bool anomoly_visible = false;
 
 // Level 4 variables
 int rail_xoffset = 0;
 int rail_width = 0;
 char * top_rail;
 char * bottom_rail;
-
-// Level
 
 // Paddle variables
 int left_paddle_offset;

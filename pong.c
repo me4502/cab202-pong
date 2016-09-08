@@ -119,7 +119,9 @@ void process() {
         case 1:
             break;
         case 2:
-            sprite_draw(*anomoly);
+            if (anomoly_visible) {
+                sprite_draw(*anomoly);
+            }
             break;
         case 3:
             for (int x = 0; x < rail_width-1; x++) {
@@ -253,6 +255,10 @@ void process() {
         case 1:
             break;
         case 2:
+            if (!anomoly_visible && timer_expired(*anomoly_timer)) {
+                anomoly_visible = true;
+            }
+
             break;
         case 3:
             if (sy == screen_height() / 3 || sy == (screen_height() - screen_height() / 3)) {
@@ -343,8 +349,18 @@ void start_level(int new_level) {
         case 2:
             if (!anomoly) {
                 anomoly = malloc(sizeof(sprite_id));
-                *anomoly = sprite_create(screen_width() / 2 - 3, screen_height() / 2 - 3, 5, 5, anomoly_image);
+                *anomoly = sprite_create(screen_width() / 2 - 3, screen_height() / 2 - 2, 5, 5, anomoly_image);
             }
+
+            if (!anomoly_timer) {
+                anomoly_timer = malloc(sizeof(timer_id));
+                *anomoly_timer = create_timer(5000);
+            } else {
+                timer_reset(*anomoly_timer);
+            }
+
+            anomoly_visible = false;
+
             break;
         case 3:
             rail_xoffset = screen_width() / 4;
