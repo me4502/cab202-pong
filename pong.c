@@ -79,10 +79,6 @@ void process() {
         return;
     }
 
-    if (ball_sprite) {
-        sprite_draw(*ball_sprite);
-    }
-
     // Draw the border
     draw_line(0, 0, screen_width()-1, 0, '*');
     draw_line(0, 0, 0, screen_height()-1, '*');
@@ -123,6 +119,7 @@ void process() {
         case 1:
             break;
         case 2:
+            sprite_draw(*anomoly);
             break;
         case 3:
             for (int x = 0; x < rail_width-1; x++) {
@@ -137,6 +134,11 @@ void process() {
         default:
             start_level(0);
             break;
+    }
+
+    // Draw the main ball sprite after the level has been drawn.
+    if (ball_sprite) {
+        sprite_draw(*ball_sprite);
     }
 
     if (cooldown_timer) {
@@ -339,6 +341,10 @@ void start_level(int new_level) {
         case 1:
             break;
         case 2:
+            if (!anomoly) {
+                anomoly = malloc(sizeof(sprite_id));
+                *anomoly = sprite_create(screen_width() / 2 - 3, screen_height() / 2 - 3, 5, 5, anomoly_image);
+            }
             break;
         case 3:
             rail_xoffset = screen_width() / 4;
