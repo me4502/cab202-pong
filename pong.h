@@ -17,7 +17,7 @@ bool gameover = false;
 // Level management variables.
 int level = 0;
 int score = 0;
-int lives = 10;
+int lives = 3;
 int game_time = 0;
 const int LEVEL_COUNT = 4;
 
@@ -26,6 +26,15 @@ int cooldown_number;
 
 sprite_id *ball_sprite;
 double ball_starting_velocity = 0.2;
+
+// Level 3 variables
+char * anomoly_image =
+        "\\ | /"
+        " \\|/ "
+        "-- --"
+        " /|\\ "
+        "/ | \\";
+sprite_id * anomoly;
 
 // Level 4 variables
 int rail_xoffset = 0;
