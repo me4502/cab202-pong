@@ -28,6 +28,10 @@ sprite_id *ball_sprite;
 double ball_starting_velocity = 0.2;
 
 // Level 4 variables
+int rail_xoffset = 0;
+int rail_width = 0;
+char * top_rail;
+char * bottom_rail;
 
 // Level
 
@@ -46,7 +50,12 @@ const char * help_screen_text[] = {
         "S for down - W for up"
         "",
         "Press any key to exit"
+};
 
+// Gameover screen
+const char * game_over_screen_text[] = {
+        "Game Over",
+        "Play again? (y/n)"
 };
 
 void setup();
@@ -58,6 +67,8 @@ void process();
 void spawn_ball();
 
 void start_level(int new_level);
+
+void reset_game();
 
 void game_over();
 

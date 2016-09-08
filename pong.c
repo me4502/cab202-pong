@@ -45,6 +45,24 @@ void cleanup() {
 void process() {
     int pressed_char = get_char();
 
+    // Draw the gameover screen
+    if (gameover) {
+        for (int i = 0; i < sizeof(game_over_screen_text) / sizeof(game_over_screen_text[0]); i++) {
+            const char * text = game_over_screen_text[i];
+
+            int x = screen_width()/2 - string_length((char *) text) / 2;
+
+            draw_formatted(x, i, text);
+        }
+
+        if (pressed_char == 'y') {
+            reset_game();
+        } else if (pressed_char == 'n') {
+            running = false;
+        }
+        return;
+    }
+
     // Draw help screen
     if (display_help_screen) {
         for (int i = 0; i < sizeof(help_screen_text) / sizeof(help_screen_text[0]); i++) {
@@ -107,6 +125,14 @@ void process() {
         case 2:
             break;
         case 3:
+            for (int x = 0; x < rail_width-1; x++) {
+                if (top_rail[x] == '=') {
+                    draw_char(rail_xoffset + x, screen_height() / 3, top_rail[x]);
+                }
+                if (bottom_rail[x] == '=') {
+                    draw_char(rail_xoffset + x, screen_height() - (screen_height() / 3), bottom_rail[x]);
+                }
+            }
             break;
         default:
             start_level(0);
@@ -148,8 +174,7 @@ void process() {
     int sx = ball_sprite ? (int) round(sprite_x(*ball_sprite)) : 0;
     int sy = ball_sprite ? (int) round(sprite_y(*ball_sprite)) : 0;
 
-    if (!ball_sprite || sx < 0
-        || sx > screen_width()) {
+    if (!ball_sprite || sx < 0 || sx > screen_width()) {
         if (ball_sprite && sy < screen_width() / 2) {
             lives -= 1;
             if (lives < 0) {
@@ -228,6 +253,47 @@ void process() {
         case 2:
             break;
         case 3:
+            if (sy == screen_height() / 3 || sy == (screen_height() - screen_height() / 3)) {
+                if (sx >= rail_xoffset && sx < rail_xoffset + rail_width - 1) {
+                    bool hit = false;
+                    bool is_top = sy == screen_height() / 3;
+                    if (is_top) {
+                        if (top_rail[sx - rail_xoffset] == '=') {
+                            top_rail[sx - rail_xoffset] = ' ';
+                            if (sx - rail_xoffset > 0)
+                                top_rail[sx - rail_xoffset - 1] = ' ';
+                            if (sx - rail_xoffset < rail_width)
+                                top_rail[sx - rail_xoffset + 1] = ' ';
+                            hit = true;
+                        }
+                    } else {
+                        if (bottom_rail[sx - rail_xoffset] == '=') {
+                            bottom_rail[sx - rail_xoffset] = ' ';
+                            if (sx - rail_xoffset > 0)
+                                bottom_rail[sx - rail_xoffset - 1] = ' ';
+                            if (sx - rail_xoffset < rail_width)
+                                bottom_rail[sx - rail_xoffset + 1] = ' ';
+                            hit = true;
+                        }
+                    }
+                    if (hit) {
+                        double dx = sprite_dx(*ball_sprite);
+                        double dy = sprite_dy(*ball_sprite);
+
+                        if (sx == rail_xoffset || sx == rail_xoffset + rail_width - 2
+                            //|| (is_top && (top_rail[sx - rail_xoffset - (int)(dx)] == ' '))
+                            //|| (!is_top && (bottom_rail[sx - rail_xoffset - (int)(dx)] == ' '))
+                            ) {
+                            dx = -dx;
+                        } else {
+                            dy = -dy;
+                        }
+
+                        sprite_back(*ball_sprite);
+                        sprite_turn_to(*ball_sprite, dx, dy);
+                    }
+                }
+            }
             break;
         default:
             start_level(0);
@@ -275,11 +341,30 @@ void start_level(int new_level) {
         case 2:
             break;
         case 3:
+            rail_xoffset = screen_width() / 4;
+            rail_width = screen_width() / 2;
+            top_rail = malloc(rail_width * sizeof(*top_rail));
+            bottom_rail = malloc(rail_width * sizeof(*bottom_rail));
+
+            for (int i = 0; i < rail_width; i++) {
+                top_rail[i] = '=';
+                bottom_rail[i] = '=';
+            }
             break;
         default:
             start_level(0);
             break;
     }
+}
+
+void reset_game() {
+    lives = 3;
+    score = 0;
+    game_time = 0;
+
+    gameover = false;
+
+    spawn_ball();
 }
 
 void game_over() {
