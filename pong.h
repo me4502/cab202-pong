@@ -37,6 +37,8 @@ char * anomoly_image =
 sprite_id * anomoly;
 timer_id *anomoly_timer;
 bool anomoly_visible = false;
+int anomoly_x_offset = 3;
+int anomoly_y_offset = 2;
 
 // Level 4 variables
 int rail_xoffset = 0;

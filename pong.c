@@ -259,6 +259,37 @@ void process() {
                 anomoly_visible = true;
             }
 
+            if (anomoly_visible) {
+                int x_diff = (int)round(sprite_x(*anomoly)) + anomoly_x_offset - sx - 1;
+                int y_diff = (int)round(sprite_y(*anomoly)) + anomoly_y_offset - sy;
+
+                double dist_squared = pow(x_diff, 2) + pow(y_diff, 2);
+
+                if (dist_squared < pow(1, -10)) {
+                    dist_squared = pow(1, -10);
+                }
+
+                double dist = sqrt(dist_squared);
+                if (dist > 2 && dist < 8) {
+                    double dx = sprite_dx(*ball_sprite);
+                    double dy = sprite_dy(*ball_sprite);
+
+                    double magnitude = (1 / dist_squared) * 0.7;
+
+                    dx += (magnitude * x_diff / dist);
+                    dy += (magnitude * y_diff / dist);
+
+                    double normal_dist = sqrt(pow(dx, 2) + pow(dy, 2));
+
+                    if (normal_dist > 1) {
+                        dx /= normal_dist;
+                        dy /= normal_dist;
+                    }
+
+                    sprite_turn_to(*ball_sprite, dx, dy);
+                }
+            }
+
             break;
         case 3:
             if (sy == screen_height() / 3 || sy == (screen_height() - screen_height() / 3)) {
@@ -308,6 +339,19 @@ void process() {
             break;
     }
 
+    // Normalize the ball velocity.
+    double dx = sprite_dx(*ball_sprite);
+    double dy = sprite_dy(*ball_sprite);
+
+    double dist = sqrt(pow(dx, 2) + pow(dy, 2));
+    if (dist > 1) {
+        dx /= dist;
+        dy /= dist;
+
+        sprite_turn_to(*ball_sprite, dx, dy);
+    }
+
+
     sprite_step(*ball_sprite);
 
     if (pressed_char == 'l') {
@@ -334,6 +378,16 @@ void spawn_ball() {
     cooldown_timer = malloc(sizeof(timer_id));
     *cooldown_timer = create_timer(300);
     cooldown_number = 3;
+
+    if (level == 2) {
+        if (!anomoly_timer) {
+            anomoly_timer = malloc(sizeof(timer_id));
+            *anomoly_timer = create_timer(5000);
+        } else {
+            timer_reset(*anomoly_timer);
+        }
+        anomoly_visible = false;
+    }
 }
 
 void start_level(int new_level) {
@@ -349,7 +403,7 @@ void start_level(int new_level) {
         case 2:
             if (!anomoly) {
                 anomoly = malloc(sizeof(sprite_id));
-                *anomoly = sprite_create(screen_width() / 2 - 3, screen_height() / 2 - 2, 5, 5, anomoly_image);
+                *anomoly = sprite_create(screen_width() / 2 - anomoly_x_offset, screen_height() / 2 - anomoly_y_offset, 5, 5, anomoly_image);
             }
 
             if (!anomoly_timer) {
