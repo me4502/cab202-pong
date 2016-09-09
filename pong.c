@@ -192,7 +192,7 @@ void process() {
     game_time ++;
 
     // Bounce when the ball hits the top or bottom.
-    if (sy < 3 || sy > screen_height()-2) {
+    if (sy < 3 || sy > screen_height()-3) {
         double dx = sprite_dx(*ball_sprite);
         double dy = -sprite_dy(*ball_sprite);
 
